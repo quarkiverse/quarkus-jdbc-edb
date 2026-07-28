@@ -75,6 +75,10 @@ Native image compilation is supported and needs no additional configuration:
 * *`SQLXML` in native mode.* Unlike the PostgreSQL extension, this extension does not substitute the
   driver's `SQLXML` implementation to keep the JDK XML parsers out of the native image. `SQLXML`
   works correctly; the native image is simply larger when an application uses it.
+* *SSPI authentication is unavailable in native mode.* Windows integrated authentication needs JNA,
+  which the driver pulls in through an optional `waffle-jna` dependency, so the SSPI code path is
+  removed from native images. Use password, SCRAM or GSSAPI authentication instead. SSPI continues
+  to work in JVM mode when `waffle-jna` is on the classpath.
 
 == Developing against community PostgreSQL
 
