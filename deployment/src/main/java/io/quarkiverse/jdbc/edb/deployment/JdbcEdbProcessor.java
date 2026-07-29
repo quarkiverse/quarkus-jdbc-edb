@@ -15,7 +15,6 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ExtensionSslNativeSupportBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBundleBuildItem;
-import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ServiceProviderBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.DatabaseKindDialectBuildItem;
@@ -103,12 +102,4 @@ class JdbcEdbProcessor {
         // ServiceProviderBuildItem.allProvidersFromClassPath, so it must not be registered here.
     }
 
-    @BuildStep
-    void registerForReflection(BuildProducer<ReflectiveClassBuildItem> reflectiveClass) {
-        reflectiveClass.produce(ReflectiveClassBuildItem.builder(DRIVER_CLASS, XA_DATASOURCE_CLASS)
-                .reason("The EDB JDBC driver and XA DataSource are instantiated reflectively by Agroal")
-                .methods(true)
-                .fields(true)
-                .build());
-    }
 }

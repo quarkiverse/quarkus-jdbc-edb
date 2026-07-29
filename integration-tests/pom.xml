@@ -28,6 +28,19 @@
             <artifactId>quarkus-hibernate-orm</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-flyway</artifactId>
+        </dependency>
+        <!--
+            Since Flyway 10 each database lives in its own artifact, and quarkus-flyway depends only
+            on flyway-core. Quarkus' own Flyway integration tests declare this alongside
+            quarkus-flyway; the version is managed by quarkus-bom.
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkiverse.edb</groupId>
             <artifactId>quarkus-jdbc-edb</artifactId>
             <version>${project.version}</version>

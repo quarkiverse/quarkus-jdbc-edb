@@ -55,6 +55,40 @@ This uses `com.edb.xa.PGXADataSource`.
 written for EDB Postgres Advanced Server. No further configuration is required -- in particular, do
 not set `quarkus.hibernate-orm.dialect` manually.
 
+== Flyway
+
+Flyway works against EPAS, but needs two things that are easy to miss.
+
+First, add the PostgreSQL database module. Since Flyway 10 each database lives in its own artifact,
+and `quarkus-flyway` depends only on `flyway-core`. Migrations fail without this module regardless of
+which database you use:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-database-postgresql</artifactId>
+</dependency>
+----
+
+Second, add `changeServerName=true` to the JDBC URL:
+
+[source,properties]
+----
+quarkus.datasource.jdbc.url=jdbc:edb://localhost:5444/edb?changeServerName=true
+----
+
+Flyway selects its database type from the product name reported through JDBC metadata and ships no
+type for `EnterpriseDB`, which is what EPAS reports. Without this property migration fails with:
+
+----
+org.flywaydb.core.api.FlywayException: Unsupported Database: EnterpriseDB 18.4
+----
+
+Note that `changeServerName=true` changes what *every* reader of `DatabaseMetaData` sees, not just
+Flyway. The Hibernate dialect is unaffected, because Quarkus resolves it at build time from the
+db-kind, but application code branching on `getDatabaseProductName()` will see `PostgreSQL`.
+
 == Native image
 
 Native image compilation is supported and needs no additional configuration:
@@ -70,15 +104,11 @@ Native image compilation is supported and needs no additional configuration:
   start a database container for `db-kind=edb`. EPAS container images are distributed from
   `docker.enterprisedb.com` and require a subscription, so no default image can be assumed. Dev
   Services is planned for a future release.
-* *Flyway and Liquibase are unverified.* Both resolve a database type from the JDBC URL prefix and
-  may not recognise `jdbc:edb:`. Neither is currently tested with this extension.
+* *Liquibase is unverified.* It resolves a database type much as Flyway does, so it may need similar
+  treatment, but it is not currently tested with this extension.
 * *`SQLXML` in native mode.* Unlike the PostgreSQL extension, this extension does not substitute the
   driver's `SQLXML` implementation to keep the JDK XML parsers out of the native image. `SQLXML`
   works correctly; the native image is simply larger when an application uses it.
-* *SSPI authentication is unavailable in native mode.* Windows integrated authentication needs JNA,
-  which the driver pulls in through an optional `waffle-jna` dependency, so the SSPI code path is
-  removed from native images. Use password, SCRAM or GSSAPI authentication instead. SSPI continues
-  to work in JVM mode when `waffle-jna` is on the classpath.
 
 == Developing against community PostgreSQL
 
