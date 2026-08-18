@@ -1,27 +1,133 @@
-= Quarkus Jdbc Edb
+= Quarkus JDBC EDB
 
 include::./includes/attributes.adoc[]
 
-TIP: Describe what the extension does here.
+A Quarkus extension providing JDBC connectivity to
+https://www.enterprisedb.com/products/edb-postgres-advanced-server[EDB Postgres Advanced Server]
+(EPAS), including GraalVM native image support.
 
 == Installation
 
-If you want to use this extension, you need to add the `io.quarkiverse.jdbc-edb:quarkus-jdbc-edb` extension first to your build file.
-
-For instance, with Maven, add the following dependency to your POM file:
+Add the extension to your build file. With Maven, add the following dependency to your POM file:
 
 [source,xml,subs=attributes+]
 ----
 <dependency>
-    <groupId>io.quarkiverse.jdbc-edb</groupId>
+    <groupId>io.quarkiverse.edb</groupId>
     <artifactId>quarkus-jdbc-edb</artifactId>
     <version>{project-version}</version>
 </dependency>
 ----
 
-[[extension-configuration-reference]]
-== Extension Configuration Reference
+== Configuration
 
-TIP: Remove this section if you don't have Quarkus configuration properties in your extension.
+[source,properties]
+----
+quarkus.datasource.db-kind=edb
+quarkus.datasource.username=enterprisedb
+quarkus.datasource.password=secret
+quarkus.datasource.jdbc.url=jdbc:edb://localhost:5444/edb
+----
 
-include::includes/quarkus-jdbc-edb.adoc[leveloffset=+1, opts=optional]
+Two things differ from PostgreSQL and catch people out:
+
+* The default EPAS port is `5444`, not PostgreSQL's `5432`.
+* The JDBC URL prefix must be `jdbc:edb:`. The EDB driver rejects `jdbc:postgresql:`.
+
+Because this extension is usually the only JDBC driver on the classpath,
+`quarkus.datasource.db-kind` may be omitted entirely and will resolve to `edb`.
+
+This extension contributes no configuration properties of its own; it is configured entirely through
+the standard https://quarkus.io/guides/datasource[Quarkus datasource configuration].
+
+== XA transactions
+
+[source,properties]
+----
+quarkus.datasource.jdbc.transactions=xa
+----
+
+This uses `com.edb.xa.PGXADataSource`.
+
+== Hibernate ORM
+
+`db-kind=edb` maps to Hibernate ORM's `org.hibernate.dialect.PostgresPlusDialect`, the dialect
+written for EDB Postgres Advanced Server. No further configuration is required -- in particular, do
+not set `quarkus.hibernate-orm.dialect` manually.
+
+== Flyway
+
+Flyway works against EPAS, but needs two things that are easy to miss.
+
+First, add the PostgreSQL database module. Since Flyway 10 each database lives in its own artifact,
+and `quarkus-flyway` depends only on `flyway-core`. Migrations fail without this module regardless of
+which database you use:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-database-postgresql</artifactId>
+</dependency>
+----
+
+Second, add `changeServerName=true` to the JDBC URL:
+
+[source,properties]
+----
+quarkus.datasource.jdbc.url=jdbc:edb://localhost:5444/edb?changeServerName=true
+----
+
+Flyway selects its database type from the product name reported through JDBC metadata and ships no
+type for `EnterpriseDB`, which is what EPAS reports. Without this property migration fails with:
+
+----
+org.flywaydb.core.api.FlywayException: Unsupported Database: EnterpriseDB 18.4
+----
+
+Note that `changeServerName=true` changes what *every* reader of `DatabaseMetaData` sees, not just
+Flyway. The Hibernate dialect is unaffected, because Quarkus resolves it at build time from the
+db-kind, but application code branching on `getDatabaseProductName()` will see `PostgreSQL`.
+
+== Native image
+
+Native image compilation is supported and needs no additional configuration:
+
+[source,bash]
+----
+./mvnw install -Dnative
+----
+
+== Limitations
+
+* *No Dev Services.* `quarkus.datasource.jdbc.url` must be configured explicitly; Quarkus will not
+  start a database container for `db-kind=edb`. EPAS container images are distributed from
+  `docker.enterprisedb.com` and require a subscription, so no default image can be assumed. Dev
+  Services is planned for a future release.
+* *Liquibase is unverified.* It resolves a database type much as Flyway does, so it may need similar
+  treatment, but it is not currently tested with this extension.
+* *`SQLXML` in native mode.* Unlike the PostgreSQL extension, this extension does not substitute the
+  driver's `SQLXML` implementation to keep the JDK XML parsers out of the native image. `SQLXML`
+  works correctly; the native image is simply larger when an application uses it.
+
+== Developing against community PostgreSQL
+
+The EDB driver is a fork of pgjdbc and connects to a community PostgreSQL server, which is useful
+for local development and is how this extension's own integration tests run in CI. Be aware of what
+is *not* present there:
+
+* Oracle compatibility mode -- SPL, packages, `DBMS_*` built-ins, `ROWNUM`, `SYSDATE`, `DUAL`,
+  hierarchical queries.
+* `getDatabaseProductName()` returns `PostgreSQL` rather than `EnterpriseDB`.
+* The port is 5432 rather than 5444.
+* EPAS-only catalogs, `edb_` configuration parameters, and redwood date semantics.
+
+Note that the Hibernate dialect is selected at build time from the db-kind, so `PostgresPlusDialect`
+is used in both cases.
+
+== Licensing
+
+The `com.enterprisedb:edb-jdbc` driver is published on Maven Central under a dual licence:
+BSD-2-Clause and the
+https://www.enterprisedb.com/limited-use-license[EDB Limited Use Software License Agreement].
+Review both before deploying.

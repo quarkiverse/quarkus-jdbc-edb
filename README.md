@@ -1,27 +1,78 @@
-# Quarkus Jdbc Edb
+# Quarkus JDBC EDB
 
-[![Version](https://img.shields.io/maven-central/v/io.quarkiverse.jdbc-edb/quarkus-jdbc-edb?logo=apache-maven&style=flat-square)](https://central.sonatype.com/artifact/io.quarkiverse.jdbc-edb/quarkus-jdbc-edb-parent)
+[![Version](https://img.shields.io/maven-central/v/io.quarkiverse.edb/quarkus-jdbc-edb?logo=apache-maven&style=flat-square)](https://central.sonatype.com/artifact/io.quarkiverse.edb/quarkus-jdbc-edb-parent)
 
-## Welcome to Quarkiverse!
+A Quarkus extension providing JDBC connectivity to
+[EDB Postgres Advanced Server](https://www.enterprisedb.com/products/edb-postgres-advanced-server)
+(EPAS), including Hibernate ORM dialect selection and GraalVM native image support.
 
-Congratulations and thank you for creating a new Quarkus extension project in Quarkiverse!
+## Installation
 
-Feel free to replace this content with the proper description of your new project and necessary instructions how to use and contribute to it.
+```xml
+<dependency>
+    <groupId>io.quarkiverse.edb</groupId>
+    <artifactId>quarkus-jdbc-edb</artifactId>
+    <version>${quarkus-jdbc-edb.version}</version>
+</dependency>
+```
 
-You can find the basic info, Quarkiverse policies and conventions in [the Quarkiverse wiki](https://github.com/quarkiverse/quarkiverse/wiki).
+## Configuration
 
-In case you are creating a Quarkus extension project for the first time, please follow [Building My First Extension](https://quarkus.io/guides/building-my-first-extension) guide.
+```properties
+quarkus.datasource.db-kind=edb
+quarkus.datasource.username=enterprisedb
+quarkus.datasource.password=secret
+quarkus.datasource.jdbc.url=jdbc:edb://localhost:5444/edb
+```
 
-Other useful articles related to Quarkus extension development can be found under the [Writing Extensions](https://quarkus.io/guides/#writing-extensions) guide category on the [Quarkus.io](https://quarkus.io) website.
+## What's supported
 
-Thanks again, good luck and have fun!
+- **Datasources** via Agroal, including XA (`quarkus.datasource.jdbc.transactions=xa`).
+- **Hibernate ORM**, mapped to `org.hibernate.dialect.PostgresPlusDialect`. No need to set
+  `quarkus.hibernate-orm.dialect` manually.
+- **GraalVM native image**, with no additional configuration.
+- **Kubernetes Service Binding** for binding type `edb`.
+
+## Limitations
+
+- **No Dev Services.** `quarkus.datasource.jdbc.url` must be set explicitly; Quarkus will not start a
+  database container for `db-kind=edb`, because EPAS images require a subscription.
+- **Flyway needs extra setup** — the `flyway-database-postgresql` artifact and `changeServerName=true`
+  in the JDBC URL, since Flyway ships no `EnterpriseDB` database type. **Liquibase is unverified.**
+
+See the [full guide](docs/modules/ROOT/pages/index.adoc) for the complete list, and for notes on
+developing against community PostgreSQL.
+
+## Licensing
+
+The `com.enterprisedb:edb-jdbc` driver is published on Maven Central under a dual licence:
+BSD-2-Clause and the [EDB Limited Use Software License Agreement](https://www.enterprisedb.com/limited-use-license).
+Review both before deploying.
 
 ## Documentation
 
-The documentation for this extension should be maintained as part of this repository and it is stored in the `docs/` directory.
+The full guide lives in the `docs/` directory of this repository, following [Antora's Standard File
+and Directory Set](https://docs.antora.org/antora/2.3/standard-directories/).
 
-The layout should follow the [Antora's Standard File and Directory Set](https://docs.antora.org/antora/2.3/standard-directories/).
+To publish it, this repository needs to be added to the
+[Quarkiverse Docs Antora playbook](https://github.com/quarkiverse/quarkiverse-docs/blob/main/antora-playbook.yml#L7)
+([example PR](https://github.com/quarkiverse/quarkiverse-docs/pull/1)); it will then appear on
+<https://docs.quarkiverse.io/>.
 
-Once the docs are ready to be published, please open a PR including this repository in the [Quarkiverse Docs Antora playbook](https://github.com/quarkiverse/quarkiverse-docs/blob/main/antora-playbook.yml#L7). See an example [here](https://github.com/quarkiverse/quarkiverse-docs/pull/1)
+## Building from source
 
-Your documentation will then be published to the <https://docs.quarkiverse.io/> website.
+Build and test the extension with:
+
+```bash
+mvn clean install
+```
+
+Integration tests run against a community PostgreSQL container via Testcontainers, so a working
+Docker environment is required. To run them against a real EPAS instance instead:
+
+```bash
+mvn clean install -Pepas -Dedb.jdbc.url=jdbc:edb://localhost:5444/edb \
+    -Dedb.jdbc.username=enterprisedb -Dedb.jdbc.password=secret
+```
+
+Add `-Dnative` to either command to build and test the native image.

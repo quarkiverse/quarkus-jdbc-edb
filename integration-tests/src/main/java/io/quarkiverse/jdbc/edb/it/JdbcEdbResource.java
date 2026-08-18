@@ -16,17 +16,61 @@
 */
 package io.quarkiverse.jdbc.edb.it;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 @Path("/jdbc-edb")
-@ApplicationScoped
+@Produces(MediaType.TEXT_PLAIN)
 public class JdbcEdbResource {
-    // add some rest methods here
+
+    @Inject
+    DataSource dataSource;
 
     @GET
-    public String hello() {
-        return "Hello jdbc-edb";
+    public String databaseProductName() throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            return conn.getMetaData().getDatabaseProductName();
+        }
+    }
+
+    @GET
+    @Path("/driver")
+    public String driverName() throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            return conn.getMetaData().getDriverName();
+        }
+    }
+
+    @GET
+    @Path("/url")
+    public String jdbcUrl() throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            return conn.getMetaData().getURL();
+        }
+    }
+
+    /**
+     * The implementation class of the driver's own connection. This is the unambiguous proof that
+     * the EDB driver served the connection: {@code getDriverName()} is unreliable here because the
+     * EDB driver is a fork of pgjdbc and may report the upstream driver name.
+     * <p>
+     * The unwrap is required because Agroal hands out a pooled
+     * {@code io.agroal.pool.wrapper.ConnectionWrapper}; its {@code unwrap} delegates to the
+     * underlying driver connection.
+     */
+    @GET
+    @Path("/connection-class")
+    public String connectionClass() throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            return conn.unwrap(Connection.class).getClass().getName();
+        }
     }
 }
