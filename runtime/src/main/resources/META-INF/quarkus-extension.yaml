@@ -12,4 +12,4 @@ metadata:
   guide: "https://docs.quarkiverse.io/quarkus-jdbc-edb/dev/"
   categories:
     - "data"
-  status: "preview"
+  status: "stable"
