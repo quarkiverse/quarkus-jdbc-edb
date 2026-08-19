@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.quarkiverse.edb</groupId>
         <artifactId>quarkus-jdbc-edb-parent</artifactId>
-        <version>1.0.0</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <artifactId>quarkus-jdbc-edb</artifactId>
     <name>Quarkus JDBC EDB - Runtime</name>
