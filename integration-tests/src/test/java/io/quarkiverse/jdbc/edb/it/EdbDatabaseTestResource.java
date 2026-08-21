@@ -22,12 +22,16 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
  * {@code urlParams} init arg, which is how {@link FlywayProbeTest} obtains
  * {@code changeServerName=true}.
  * <p>
- * The {@code secondaryDatasource} init arg additionally configures a named datasource of that name,
- * which is how {@link NamedDataSourceTest} verifies that the extension's build items apply to
- * datasources other than the default one. It points at the same database as the default datasource:
- * that is enough to prove the wiring, and keeps the test free of side effects on a real EPAS
- * instance. Note that a genuine two-phase commit would need two <em>distinct</em> databases, since
- * two datasources onto the same one may be collapsed into a single-phase commit.
+ * A named datasource is always configured alongside the default one, so that
+ * {@link NamedDataSourceResourceTest} can verify the extension's build items apply to datasources
+ * other than the default. It is unconditional because the datasource's {@code db-kind} is build-time
+ * configuration declared in {@code application.properties}: a native image bakes that in, so it
+ * cannot be switched on per test. Only the URL and credentials are supplied here.
+ * <p>
+ * The named datasource points at the same database as the default one. That is enough to prove the
+ * wiring and keeps the tests free of side effects on a real EPAS instance. Note that a genuine
+ * two-phase commit would need two <em>distinct</em> databases, since two datasources onto the same
+ * one may be collapsed into a single-phase commit.
  */
 public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleManager {
 
@@ -36,18 +40,20 @@ public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleMana
     private static final String PASSWORD_PROPERTY = "edb.jdbc.password";
 
     private static final String URL_PARAMS_ARG = "urlParams";
-    private static final String SECONDARY_DATASOURCE_ARG = "secondaryDatasource";
+
+    /**
+     * Must match the datasource name declared in {@code application.properties}.
+     */
+    private static final String SECONDARY_DATASOURCE = "secondary";
 
     private static final String POSTGRES_IMAGE = "postgres:17-alpine";
 
     private PostgreSQLContainer container;
     private String urlParams = "";
-    private String secondaryDatasource = "";
 
     @Override
     public void init(Map<String, String> initArgs) {
         urlParams = initArgs.getOrDefault(URL_PARAMS_ARG, "");
-        secondaryDatasource = initArgs.getOrDefault(SECONDARY_DATASOURCE_ARG, "");
     }
 
     @Override
@@ -78,16 +84,13 @@ public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleMana
         config.put("quarkus.datasource.username", username);
         config.put("quarkus.datasource.password", password);
 
-        if (!secondaryDatasource.isBlank()) {
-            // Only runtime configuration belongs here. The datasource's db-kind is build-time
-            // configuration, read during augmentation before this resource's values are visible, so
-            // it has to come from a test profile instead -- see NamedDataSourceTest. Without it
-            // Agroal never builds a bean for the datasource and the injection point goes unsatisfied.
-            String prefix = "quarkus.datasource.\"" + secondaryDatasource + "\".";
-            config.put(prefix + "jdbc.url", url);
-            config.put(prefix + "username", username);
-            config.put(prefix + "password", password);
-        }
+        // Only runtime configuration belongs here. The named datasource's db-kind is build-time
+        // configuration and lives in application.properties: augmentation reads it before these
+        // values are visible, and without it Agroal never builds a bean for the datasource.
+        String prefix = "quarkus.datasource.\"" + SECONDARY_DATASOURCE + "\".";
+        config.put(prefix + "jdbc.url", url);
+        config.put(prefix + "username", username);
+        config.put(prefix + "password", password);
 
         return config;
     }
