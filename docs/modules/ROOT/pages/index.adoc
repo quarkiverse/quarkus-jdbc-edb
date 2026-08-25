@@ -55,6 +55,33 @@ This uses `com.edb.xa.PGXADataSource`.
 written for EDB Postgres Advanced Server. No further configuration is required -- in particular, do
 not set `quarkus.hibernate-orm.dialect` manually.
 
+== TLS
+
+Encrypted connections need no extra configuration beyond the driver's own properties on the JDBC URL:
+
+[source,properties]
+----
+quarkus.datasource.jdbc.url=jdbc:edb://localhost:5444/edb?sslmode=verify-full&sslrootcert=/path/server.crt
+----
+
+`sslmode=require` encrypts the connection without validating the server certificate; `verify-full`
+additionally verifies the certificate chain and the hostname. Mutual TLS is supported by adding a
+client certificate and key:
+
+[source,properties]
+----
+...?sslmode=verify-full&sslrootcert=/path/ca.crt&sslcert=/path/client.crt&sslkey=/path/client.key.pk8
+----
+
+The client key must be in *PKCS#8 DER* format -- the driver cannot read a PEM key:
+
+[source,bash]
+----
+openssl pkcs8 -topk8 -inform PEM -outform DER -in client.key -out client.key.pk8 -nocrypt
+----
+
+All of these work in native mode as well as JVM mode.
+
 == Flyway
 
 Flyway works against EPAS, but needs two things that are easy to miss.
@@ -88,6 +115,24 @@ org.flywaydb.core.api.FlywayException: Unsupported Database: EnterpriseDB 18.4
 Note that `changeServerName=true` changes what *every* reader of `DatabaseMetaData` sees, not just
 Flyway. The Hibernate dialect is unaffected, because Quarkus resolves it at build time from the
 db-kind, but application code branching on `getDatabaseProductName()` will see `PostgreSQL`.
+Liquibase is affected in particular -- see <<Liquibase>>.
+
+== Liquibase
+
+Liquibase works against EPAS with no additional configuration. Unlike Flyway, it ships a database
+implementation for EnterpriseDB and selects it automatically, which you can see at startup:
+
+----
+EnterpriseDB jdbc:edb://... does not store DATE columns. Instead, it auto-converts them to
+TIMESTAMPs. (edb_redwood_date=true)
+----
+
+For that reason, do *not* set `changeServerName=true` when using Liquibase. It makes the driver report
+`PostgreSQL`, so Liquibase selects its generic PostgreSQL implementation and loses the EDB-specific
+handling shown above.
+
+If an application uses both Flyway and Liquibase against the same datasource, these requirements
+conflict: Flyway needs `changeServerName=true`, and Liquibase is better without it.
 
 == Native image
 
@@ -104,8 +149,6 @@ Native image compilation is supported and needs no additional configuration:
   start a database container for `db-kind=edb`. EPAS container images are distributed from
   `docker.enterprisedb.com` and require a subscription, so no default image can be assumed. Dev
   Services is planned for a future release.
-* *Liquibase is unverified.* It resolves a database type much as Flyway does, so it may need similar
-  treatment, but it is not currently tested with this extension.
 * *`SQLXML` in native mode.* Unlike the PostgreSQL extension, this extension does not substitute the
   driver's `SQLXML` implementation to keep the JDK XML parsers out of the native image. `SQLXML`
   works correctly; the native image is simply larger when an application uses it.
