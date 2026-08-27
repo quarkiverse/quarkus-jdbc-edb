@@ -1,6 +1,7 @@
 package io.quarkiverse.jdbc.edb.it;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -22,16 +23,19 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
  * {@code urlParams} init arg, which is how {@link FlywayProbeTest} obtains
  * {@code changeServerName=true}.
  * <p>
- * A named datasource is always configured alongside the default one, so that
+ * Two named datasources are always configured alongside the default one: {@code secondary}, so that
  * {@link NamedDataSourceResourceTest} can verify the extension's build items apply to datasources
- * other than the default. It is unconditional because the datasource's {@code db-kind} is build-time
- * configuration declared in {@code application.properties}: a native image bakes that in, so it
- * cannot be switched on per test. Only the URL and credentials are supplied here.
+ * other than the default, and {@code xa}, so that {@link XaDataSourceResourceTest} can exercise the
+ * XA connection path. They are unconditional because their {@code db-kind} -- and the {@code xa}
+ * one's {@code jdbc.transactions} -- are build-time configuration declared in
+ * {@code application.properties}: a native image bakes those in, so they cannot be switched on per
+ * test. Only the URL and credentials are supplied here.
  * <p>
- * The named datasource points at the same database as the default one. That is enough to prove the
- * wiring and keeps the tests free of side effects on a real EPAS instance. Note that a genuine
- * two-phase commit would need two <em>distinct</em> databases, since two datasources onto the same
- * one may be collapsed into a single-phase commit.
+ * Both point at the same database as the default one. That is enough to prove the wiring and keeps
+ * the tests free of side effects on a real EPAS instance. Note that a genuine two-phase commit would
+ * need two <em>distinct</em> databases, since two datasources onto the same one may be collapsed
+ * into a single-phase commit; the XA tests here deliberately do not depend on that, because what
+ * they exist to catch breaks well before the commit protocol is reached.
  */
 public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleManager {
 
@@ -42,9 +46,9 @@ public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleMana
     private static final String URL_PARAMS_ARG = "urlParams";
 
     /**
-     * Must match the datasource name declared in {@code application.properties}.
+     * Must match the datasource names declared in {@code application.properties}.
      */
-    private static final String SECONDARY_DATASOURCE = "secondary";
+    private static final List<String> NAMED_DATASOURCES = List.of("secondary", "xa");
 
     private static final String POSTGRES_IMAGE = "postgres:17-alpine";
 
@@ -84,13 +88,16 @@ public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleMana
         config.put("quarkus.datasource.username", username);
         config.put("quarkus.datasource.password", password);
 
-        // Only runtime configuration belongs here. The named datasource's db-kind is build-time
-        // configuration and lives in application.properties: augmentation reads it before these
-        // values are visible, and without it Agroal never builds a bean for the datasource.
-        String prefix = "quarkus.datasource.\"" + SECONDARY_DATASOURCE + "\".";
-        config.put(prefix + "jdbc.url", url);
-        config.put(prefix + "username", username);
-        config.put(prefix + "password", password);
+        // Only runtime configuration belongs here. The named datasources' db-kind -- and, for the xa
+        // one, jdbc.transactions -- are build-time configuration and live in application.properties:
+        // augmentation reads them before these values are visible, and without them Agroal never
+        // builds a bean for the datasource.
+        for (String datasource : NAMED_DATASOURCES) {
+            String prefix = "quarkus.datasource.\"" + datasource + "\".";
+            config.put(prefix + "jdbc.url", url);
+            config.put(prefix + "username", username);
+            config.put(prefix + "password", password);
+        }
 
         return config;
     }
