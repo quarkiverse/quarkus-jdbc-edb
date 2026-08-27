@@ -15,6 +15,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ExtensionSslNativeSupportBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBundleBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ServiceProviderBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.DatabaseKindDialectBuildItem;
@@ -31,6 +32,12 @@ class JdbcEdbProcessor {
     private static final String DRIVER_CLASS = "com.edb.Driver";
 
     private static final String XA_DATASOURCE_CLASS = "com.edb.xa.PGXADataSource";
+
+    /**
+     * Superclass of {@link #XA_DATASOURCE_CLASS}, and where every one of its setters is actually
+     * declared. See {@link #registerForReflection}.
+     */
+    private static final String XA_DATASOURCE_SUPERCLASS = "com.edb.ds.common.BaseDataSource";
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -100,6 +107,38 @@ class JdbcEdbProcessor {
         sslNativeSupport.produce(new ExtensionSslNativeSupportBuildItem(FEATURE));
         // The java.sql.Driver service provider is registered by Agroal itself, via
         // ServiceProviderBuildItem.allProvidersFromClassPath, so it must not be registered here.
+    }
+
+    /**
+     * Registers the driver and the XA DataSource for reflection, <em>including their methods</em>,
+     * and -- critically -- the XA DataSource's superclass alongside it.
+     * <p>
+     * Agroal configures an XA datasource by <em>JavaBean introspection</em>, not by handing the JDBC
+     * URL to the driver as it does on the plain driver path. {@link java.beans.Introspector} walks
+     * the class hierarchy, and in a native image it sees only what was registered. Without this,
+     * introspection finds nothing, Agroal logs {@code Available properties []}, applies none of the
+     * configuration -- the URL included -- and the driver falls back to its defaults: port 5432, no
+     * credentials.
+     * <p>
+     * {@link #XA_DATASOURCE_SUPERCLASS} is not optional and is the part that is easy to get wrong.
+     * Quarkus emits {@code allDeclaredMethods}, never {@code allPublicMethods}, so registering a
+     * class exposes only the methods it declares itself. {@code com.edb.xa.PGXADataSource} declares
+     * just five -- a constructor, two {@code getXAConnection} overloads, {@code getDescription} and
+     * {@code createReference}. All 106 setters, {@code setUrl} and {@code setUser} and
+     * {@code setPassword} among them, are declared on {@code BaseDataSource}. Registering only the
+     * subclass therefore registers no setters at all and leaves the failure exactly as it was.
+     * <p>
+     * JVM mode needs no metadata to introspect, so none of this is visible there.
+     * {@code XaDataSourceResourceIT} in the integration tests is what pins it.
+     */
+    @BuildStep
+    void registerForReflection(BuildProducer<ReflectiveClassBuildItem> reflectiveClass) {
+        reflectiveClass.produce(ReflectiveClassBuildItem.builder(DRIVER_CLASS, XA_DATASOURCE_CLASS, XA_DATASOURCE_SUPERCLASS)
+                .reason("The EDB JDBC driver and XA DataSource are instantiated reflectively by Agroal, "
+                        + "and the XA DataSource is configured through JavaBean introspection")
+                .methods(true)
+                .fields(true)
+                .build());
     }
 
 }
