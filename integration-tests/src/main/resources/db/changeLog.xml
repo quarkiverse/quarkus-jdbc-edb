@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        The counterpart to db/migration/V1.0.0__create_flyway_probe.sql. Kept deliberately simple:
+        what is under test is that Liquibase runs at all over a jdbc:edb: URL, in JVM and native
+        mode, not Liquibase's own feature set.
+    -->
+    <changeSet id="create-liquibase-probe" author="quarkus-jdbc-edb">
+        <createTable tableName="liquibase_probe">
+            <column name="id" type="INTEGER">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="note" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <insert tableName="liquibase_probe">
+            <column name="id" valueNumeric="1"/>
+            <column name="note" value="migrated"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
