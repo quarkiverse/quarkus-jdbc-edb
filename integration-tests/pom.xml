@@ -40,6 +40,14 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
+        <!--
+            Liquibase needs no per-database artifact: it ships an EnterpriseDB implementation and
+            selects it from the reported product name, which is the opposite of Flyway's behaviour.
+        -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-liquibase</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.quarkiverse.edb</groupId>
             <artifactId>quarkus-jdbc-edb</artifactId>
