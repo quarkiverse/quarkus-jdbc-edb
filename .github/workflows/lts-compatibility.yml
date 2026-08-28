@@ -1,0 +1,70 @@
+name: Quarkus LTS compatibility
+
+# The extension is built against the newest Quarkus but declares support for an older floor through
+# requiresQuarkusCore. Nothing in the main build checks that claim: a build step using an API added
+# after the floor compiles, passes every job there, and fails only in a user's own build on the LTS,
+# when Quarkus runs augmentation and executes the extension's build steps against their older classes.
+#
+# This workflow builds an application pinned to the declared floor, reproducing exactly that.
+#
+# Kept out of build.yml on purpose. That file follows the Quarkiverse template and is periodically
+# updated in bulk across repositories; a rewrite of it must not be able to drop this check.
+
+on:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+      - '.github/project.yml'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lts-compatibility:
+    name: Build an application on the oldest supported Quarkus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Install the extension
+        # The extension only; its integration tests are covered by the Build workflow. Installing it
+        # here rather than reusing that workflow's output keeps the two independent, so a failure
+        # points at one thing.
+        run: mvn -B install -Dno-format -DskipTests -pl runtime,deployment -am
+
+      - name: Build an application on the oldest supported Quarkus
+        # Version pinned in lts-compatibility/pom.xml, which is deliberately neither a module of the
+        # root pom nor a child of its parent -- inheriting either would resolve the newest Quarkus
+        # while appearing to test the oldest.
+        run: mvn -B -f lts-compatibility verify
