@@ -68,6 +68,16 @@
             <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            Generates the TLS test certificates at build time rather than committing them: private
+            keys in a public repository trip secret scanners, and committed certificates expire.
+            Version managed by quarkus-bom.
+        -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
