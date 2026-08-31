@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,6 +25,12 @@ import io.quarkus.test.junit.QuarkusTest;
  * @see TlsProbeResourceIT for the same assertions against the native executable
  */
 @QuarkusTest
+// Skipped under -Pepas. That profile means "run against a real EPAS instance", and these tests
+// start a PostgreSQL container of their own regardless -- which cannot work where -Pepas is
+// normally used, since Testcontainers has no Docker access inside the EPAS container. TLS
+// against a real EPAS instance is deliberately out of scope here; it belongs to the internal
+// EPAS verification suite.
+@DisabledIfSystemProperty(named = "edb.jdbc.url", matches = ".+")
 // The TLS container serves only the 'tls' datasource. The application's other datasources -- the
 // default one that Hibernate needs, and the Flyway and Liquibase ones that migrate at start --
 // still need a database, so the ordinary resource runs alongside it.
