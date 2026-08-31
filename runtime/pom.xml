@@ -59,6 +59,21 @@
                             <parentFirstArtifacts>
                                 <parentFirstArtifact>com.enterprisedb:edb-jdbc</parentFirstArtifact>
                             </parentFirstArtifacts>
+                            <!--
+                                Declared rather than derived. Left unset, the plugin takes the floor
+                                from whichever quarkus.version the extension happened to be built
+                                with, and Dependabot moves that on its own: 1.0.0 published
+                                [3.38,) and today's main would publish [3.39,), putting LTS users
+                                further out of reach with every release.
+
+                                3.33 is not an aspiration. The lts-compatibility project builds an
+                                application against it on every commit, so a build step adopting a
+                                newer Quarkus API fails there rather than in a user's build. Change
+                                that project's quarkus.platform.version and this value together,
+                                never one alone.
+                            -->
+                            <requiresQuarkusCore>[3.33,)</requiresQuarkusCore>
+                            <minimumJavaVersion>17</minimumJavaVersion>
                         </configuration>
                     </execution>
                 </executions>

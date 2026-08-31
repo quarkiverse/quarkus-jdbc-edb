@@ -19,6 +19,18 @@ Add the extension to your build file. With Maven, add the following dependency t
 </dependency>
 ----
 
+== Supported versions
+
+This extension requires *Java 17 or later* and *Quarkus 3.33 or later*.
+
+Every commit is built and tested on JDK 17, 21 and 25, and an application is built against the oldest
+supported Quarkus version to verify it stays usable there.
+
+Native image builds are verified on JDK 17 only. That is not a limitation of native image support: the
+native build uses a Mandrel builder image with its own bundled JDK, so it is insensitive to the JDK
+used to run the build. Note that Quarkus 3.39 raises the minimum GraalVM/Mandrel version to 25.0,
+which matters when building native images rather than when running them.
+
 == Configuration
 
 [source,properties]
