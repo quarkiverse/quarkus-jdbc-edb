@@ -10,7 +10,11 @@ metadata:
     - "postgres"
     - "datasource"
   guide: "https://docs.quarkiverse.io/quarkus-jdbc-edb/dev/"
-  icon-url: "https://www.enterprisedb.com/themes/custom/edb_theme/logo2.svg"
+  # The same artwork EDB marketing approved, served from this repository rather than from the website.
+  # The original location is a site theme asset path, not a published endpoint: it moves when the site
+  # is redesigned, and is served with a one-year cache, so a break would be both silent and slow to
+  # correct. Most Quarkiverse extensions with an icon host it in their own repository for this reason.
+  icon-url: "https://raw.githubusercontent.com/quarkiverse/quarkus-jdbc-edb/main/docs/modules/ROOT/assets/images/edb-logo.svg"
   categories:
     - "data"
   status: "stable"
