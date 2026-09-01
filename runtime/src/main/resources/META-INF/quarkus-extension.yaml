@@ -10,6 +10,7 @@ metadata:
     - "postgres"
     - "datasource"
   guide: "https://docs.quarkiverse.io/quarkus-jdbc-edb/dev/"
+  icon-url: "https://www.enterprisedb.com/themes/custom/edb_theme/logo2.svg"
   categories:
     - "data"
   status: "stable"
