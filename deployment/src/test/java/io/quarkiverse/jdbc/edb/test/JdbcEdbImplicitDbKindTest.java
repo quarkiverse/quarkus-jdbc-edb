@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.edb.Driver;
 
 import io.agroal.api.AgroalDataSource;
-import io.quarkus.test.QuarkusExtensionTest;
+import io.quarkus.test.QuarkusUnitTest;
 
 /**
  * Verifies that {@code quarkus.datasource.db-kind} can be omitted entirely, which is what the
@@ -24,7 +24,7 @@ import io.quarkus.test.QuarkusExtensionTest;
 public class JdbcEdbImplicitDbKindTest {
 
     @RegisterExtension
-    static final QuarkusExtensionTest test = new QuarkusExtensionTest()
+    static final QuarkusUnitTest test = new QuarkusUnitTest()
             .withApplicationRoot(jar -> ShrinkWrap.create(JavaArchive.class))
             // Deliberately unreachable -- see the note in JdbcEdbXaDataSourceTest.
             .overrideConfigKey("quarkus.datasource.jdbc.url", "jdbc:edb://localhost:1/edb")

@@ -15,7 +15,7 @@ import com.edb.xa.PGXADataSource;
 
 import io.agroal.api.AgroalDataSource;
 import io.agroal.api.exceptionsorter.PostgreSQLExceptionSorter;
-import io.quarkus.test.QuarkusExtensionTest;
+import io.quarkus.test.QuarkusUnitTest;
 
 /**
  * Verifies the XA DataSource class registered by {@code JdbcEdbProcessor} actually exists.
@@ -29,7 +29,7 @@ import io.quarkus.test.QuarkusExtensionTest;
 public class JdbcEdbXaDataSourceTest {
 
     @RegisterExtension
-    static final QuarkusExtensionTest test = new QuarkusExtensionTest()
+    static final QuarkusUnitTest test = new QuarkusUnitTest()
             .withApplicationRoot(jar -> ShrinkWrap.create(JavaArchive.class))
             .overrideConfigKey("quarkus.datasource.db-kind", "edb")
             .overrideConfigKey("quarkus.datasource.jdbc.transactions", "xa")

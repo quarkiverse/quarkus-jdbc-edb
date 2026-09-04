@@ -1,4 +1,4 @@
-package io.quarkiverse.jdbc.edb.lts;
+package io.quarkiverse.jdbc.edb.forward;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -12,13 +12,13 @@ import io.agroal.api.AgroalDataSource;
  * Reports how the extension configured this application's datasource.
  * <p>
  * Deliberately reads Agroal's configuration rather than opening a connection, so this check needs no
- * database. What it is verifying is that the extension's build steps and runtime code work against the
- * older Quarkus, not that the driver can talk to a server -- the latter is version-independent and is
- * covered by the main integration tests.
+ * database. What it verifies is that the extension's build steps and runtime code still work against a
+ * newer Quarkus than the one it was compiled against -- not that the driver can talk to a server, which
+ * is version-independent and covered by the main integration tests.
  */
-@Path("/lts")
+@Path("/compatibility")
 @Produces(MediaType.TEXT_PLAIN)
-public class LtsCompatibilityResource {
+public class ForwardCompatibilityResource {
 
     @Inject
     AgroalDataSource dataSource;
