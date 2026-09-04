@@ -1,11 +1,13 @@
-name: Quarkus LTS compatibility
+name: Quarkus forward compatibility
 
-# The extension is built against the newest Quarkus but declares support for an older floor through
-# requiresQuarkusCore. Nothing in the main build checks that claim: a build step using an API added
-# after the floor compiles, passes every job there, and fails only in a user's own build on the LTS,
-# when Quarkus runs augmentation and executes the extension's build steps against their older classes.
+# The extension is compiled against the oldest supported Quarkus LTS, because the extension registry
+# builds a catalog per Quarkus version and selects extensions by their built-with version -- so
+# building against a newer core makes us invisible to everyone on an older one. See the note on
+# quarkus.version in the root pom.
 #
-# This workflow builds an application pinned to the declared floor, reproducing exactly that.
+# The cost of that choice is the risk this workflow covers: most users are on a much newer core, and
+# nothing else proves the extension still works there. The ecosystem CI workflow builds against
+# Quarkus main, which is a different question from the current release.
 #
 # Kept out of build.yml on purpose. That file follows the Quarkiverse template and is periodically
 # updated in bulk across repositories; a rewrite of it must not be able to drop this check.
@@ -45,8 +47,8 @@ defaults:
     shell: bash
 
 jobs:
-  lts-compatibility:
-    name: Build an application on the oldest supported Quarkus
+  forward-compatibility:
+    name: Build an application on the newest Quarkus release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,8 +65,8 @@ jobs:
         # points at one thing.
         run: mvn -B install -Dno-format -DskipTests -pl runtime,deployment -am
 
-      - name: Build an application on the oldest supported Quarkus
-        # Version pinned in lts-compatibility/pom.xml, which is deliberately neither a module of the
-        # root pom nor a child of its parent -- inheriting either would resolve the newest Quarkus
-        # while appearing to test the oldest.
-        run: mvn -B -f lts-compatibility verify
+      - name: Build an application on the newest Quarkus release
+        # Version pinned in forward-compatibility/pom.xml, which is deliberately neither a module of
+        # the root pom nor a child of its parent -- inheriting either would resolve the LTS we compile
+        # against while appearing to test the newest release.
+        run: mvn -B -f forward-compatibility verify

@@ -12,7 +12,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import io.quarkus.test.QuarkusExtensionTest;
+import io.quarkus.test.QuarkusUnitTest;
 
 /**
  * Verifies that db-kind {@code edb} selects Hibernate ORM's {@link PostgresPlusDialect}, the dialect
@@ -25,7 +25,7 @@ import io.quarkus.test.QuarkusExtensionTest;
 public class JdbcEdbDialectTest {
 
     @RegisterExtension
-    static final QuarkusExtensionTest test = new QuarkusExtensionTest()
+    static final QuarkusUnitTest test = new QuarkusUnitTest()
             .withApplicationRoot(jar -> ShrinkWrap.create(JavaArchive.class)
                     .addClass(DialectProbeEntity.class))
             .overrideConfigKey("quarkus.datasource.db-kind", "edb")

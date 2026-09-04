@@ -30,7 +30,26 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.version>3.39.1</quarkus.version>
+        <!--
+            Pinned to the oldest supported Quarkus LTS, deliberately, and NOT to be bumped by
+            Dependabot (see the ignore rule in .github/dependabot.yml).
+
+            The extension registry builds a catalog per Quarkus version and selects, for each
+            extension, the newest release whose built-with-quarkus-core is at or below that version.
+            requires-quarkus-core can only narrow that, never widen it. So an extension built
+            against the newest core is invisible to everyone on an older one, whatever floor it
+            declares. Building against the LTS is what makes us visible on the LTS *and* everywhere
+            above it. This is the Quarkiverse convention, confirmed by the Quarkiverse lead in
+            quarkiverse/quarkiverse#426.
+
+            The lowest 3.33 patch is chosen on purpose: 3.33.3.2 would exclude us from the catalogs
+            for 3.33.0 through 3.33.3.
+
+            Compatibility with newer cores is covered two ways: the ecosystem CI workflow builds
+            against Quarkus main, and forward-compatibility/ builds an application on the newest
+            release on every commit.
+        -->
+        <quarkus.version>3.33.0</quarkus.version>
         <edb-jdbc.version>42.7.3.5</edb-jdbc.version>
     </properties>
 

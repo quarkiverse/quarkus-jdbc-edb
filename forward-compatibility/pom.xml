@@ -3,35 +3,36 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!--
-        An ordinary Quarkus application, pinned to the oldest Quarkus version this extension declares
-        support for, used to verify that claim on every commit.
+        An ordinary Quarkus application, pinned to the NEWEST Quarkus release, used to verify on every
+        commit that an extension built against the LTS still works on a current core.
 
-        The extension is built against the newest Quarkus (see quarkus.version in the root pom) but
-        declares a lower floor through requiresQuarkusCore. Nothing enforces that floor: a build step
-        using an API added after it would compile here, pass every CI leg, and only fail for a user on
-        the LTS, during their own build, when Quarkus runs augmentation and executes our build steps
-        against their older classes. Building this application reproduces exactly that.
+        That is the risk this project exists for. The extension is compiled against the oldest
+        supported LTS (see quarkus.version in the root pom), because the extension registry makes that
+        the only way to be discoverable to LTS users. Most users, however, are on a much newer core,
+        and nothing else proves the extension still behaves there: the ecosystem CI workflow builds
+        against Quarkus main, which is a different question from the current release.
 
         DELIBERATELY NOT A MODULE OF THE ROOT POM, AND DELIBERATELY WITHOUT A <parent>. Inheriting
         quarkus-jdbc-edb-parent would bring its quarkus.version and dependencyManagement with it, and
-        this project would then resolve the newest Quarkus while appearing to test the LTS: a green
+        this project would then resolve the LTS while appearing to test the newest release: a green
         check proving nothing. For the same reason the platform version below is written out rather
-        than generated: `quarkus-maven-plugin:3.33.3:create` does not pin the platform, it writes
+        than generated. `quarkus-maven-plugin:<version>:create` does not pin the platform, it writes
         whichever version is newest in the stream.
     -->
     <groupId>io.quarkiverse.edb</groupId>
-    <artifactId>quarkus-jdbc-edb-lts-compatibility</artifactId>
+    <artifactId>quarkus-jdbc-edb-forward-compatibility</artifactId>
     <version>999-SNAPSHOT</version>
-    <name>Quarkus JDBC EDB - LTS Compatibility Check</name>
+    <name>Quarkus JDBC EDB - Forward Compatibility Check</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
 
         <!--
-            The floor declared by requiresQuarkusCore. Change both together, never one alone.
+            The newest Quarkus release. Bump this as new releases appear; it is the upper end of the
+            range we claim to work on, and is intentionally far from the LTS we compile against.
         -->
-        <quarkus.platform.version>3.33.3</quarkus.platform.version>
+        <quarkus.platform.version>3.39.2</quarkus.platform.version>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
 
