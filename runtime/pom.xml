@@ -71,7 +71,7 @@
                                 is what does the work; see the note on quarkus.version in the root
                                 pom. Keep this value aligned with it.
                             -->
-                            <requiresQuarkusCore>[3.33,)</requiresQuarkusCore>
+                            <requiresQuarkusCore>[3.40,)</requiresQuarkusCore>
                             <minimumJavaVersion>17</minimumJavaVersion>
                         </configuration>
                     </execution>
