@@ -1,5 +1,6 @@
 package io.quarkiverse.jdbc.edb.runtime;
 
+import java.time.Duration;
 import java.util.Map;
 
 import io.agroal.api.configuration.supplier.AgroalDataSourceConfigurationSupplier;
@@ -15,15 +16,9 @@ import io.quarkus.agroal.runtime.JdbcDriver;
  * Without this bean Agroal falls back to {@code UnknownDbAgroalConnectionConfigurer}, which leaves
  * the exception sorter unset.
  * <p>
- * {@code setKeepAlive} and {@code setReadTimeout} are deliberately <em>not</em> implemented. Both were
- * added to {@link AgroalConnectionConfigurer} after the Quarkus LTS this extension is built against,
- * so implementing them would make the extension impossible to compile there -- and building against
- * the LTS is what makes it discoverable to LTS users at all (see the note on {@code quarkus.version}
- * in the root pom). Both are {@code default} methods on newer cores, so nothing breaks at runtime:
- * Quarkus logs <em>"Agroal does not support KeepAlive for database kind: edb"</em>, and the
- * corresponding {@code quarkus.datasource.jdbc.enable-keep-alive} and {@code read-timeout} properties
- * are not applied for this database kind. That is a visible warning rather than a silent loss, which
- * is what makes the trade acceptable.
+ * {@code setKeepAlive} and {@code setReadTimeout} require Quarkus 3.40+, which is what this extension
+ * line is built against; the 1.2.x branch (3.33 LTS) does not have them, since both methods were added
+ * to {@link AgroalConnectionConfigurer} after 3.33.
  */
 @JdbcDriver("edb")
 public class EdbAgroalConnectionConfigurer implements AgroalConnectionConfigurer {
@@ -38,6 +33,22 @@ public class EdbAgroalConnectionConfigurer implements AgroalConnectionConfigurer
     @Override
     public void setExceptionSorter(String databaseKind, AgroalDataSourceConfigurationSupplier dataSourceConfiguration) {
         dataSourceConfiguration.connectionPoolConfiguration().exceptionSorter(new PostgreSQLExceptionSorter());
+    }
+
+    @Override
+    public void setKeepAlive(String databaseKind, AgroalDataSourceConfigurationSupplier dataSourceConfiguration,
+            Map<String, String> additionalJdbcProperties, boolean keepAlive) {
+        // The driver has its own keep-alive mechanism, enabled through a JDBC property.
+        dataSourceConfiguration.connectionPoolConfiguration().connectionFactoryConfiguration().jdbcProperty("tcpKeepAlive",
+                Boolean.toString(keepAlive));
+    }
+
+    @Override
+    public void setReadTimeout(String databaseKind, AgroalDataSourceConfigurationSupplier dataSourceConfiguration,
+            Map<String, String> additionalJdbcProperties, Duration timeout) {
+        // socketTimeout is expressed in seconds.
+        dataSourceConfiguration.connectionPoolConfiguration().connectionFactoryConfiguration().jdbcProperty("socketTimeout",
+                Long.toString(timeout.getSeconds()));
     }
 
 }

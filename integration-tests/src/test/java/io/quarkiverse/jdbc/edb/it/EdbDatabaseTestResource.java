@@ -18,7 +18,7 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
  * When {@code edb.jdbc.url} is set -- the {@code epas} Maven profile -- no container is started and
  * the tests run against that real EPAS instance instead.
  * <p>
- * Four named datasources are always configured alongside the default one -- see
+ * Five named datasources are always configured alongside the default one -- see
  * {@link #NAMED_DATASOURCES}. They are unconditional because their {@code db-kind}, and in some cases
  * more, is build-time configuration declared in {@code application.properties}: a native image bakes
  * that in, so it cannot be switched on per test. Only the URL and credentials are supplied here.
@@ -57,7 +57,8 @@ public class EdbDatabaseTestResource implements QuarkusTestResourceLifecycleMana
             "secondary", "",
             "xa", "",
             "flyway", "changeServerName=true",
-            "liquibase", "");
+            "liquibase", "",
+            "keepalive", "");
 
     private static final String POSTGRES_IMAGE = "postgres:17-alpine";
 
