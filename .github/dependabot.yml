@@ -13,9 +13,11 @@ updates:
       # quarkus.version is pinned to the LOWEST patch of the oldest supported Quarkus LTS on purpose
       # -- see the note on that property in the root pom. The extension registry selects, per Quarkus
       # version, the newest release whose built-with-quarkus-core is at or below it, so ANY increase
-      # removes the extension from the catalogs of every earlier version. Bumping 3.33.0 to 3.33.3.1
-      # would drop us from the 3.33.0, 3.33.1, 3.33.2 and 3.33.3 catalogs, which is most of the LTS
-      # stream and quite possibly the version a customer runs.
+      # removes the extension from the catalogs of every earlier version. Bumping 3.40.0 to 3.40.1
+      # would drop us from the 3.40.0 catalog, and quite possibly the version a customer runs.
+      #
+      # This is the 3.40 LTS line (main, 1.3.x+). The 3.33 LTS line has its own pin and its own copy
+      # of this rule on the 1.2.x branch -- do not merge that branch's dependabot.yml into this one.
       #
       # So no update type is safe here, patch included. This is not a semver compatibility question,
       # which is why the usual "patches are harmless" reasoning does not apply -- an earlier version

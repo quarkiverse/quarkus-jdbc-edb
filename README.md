@@ -6,6 +6,12 @@ A Quarkus extension providing JDBC connectivity to
 [EDB Postgres Advanced Server](https://www.enterprisedb.com/products/edb-postgres-advanced-server)
 (EPAS), including Hibernate ORM dialect selection and GraalVM native image support.
 
+## Supported versions
+
+Version 1.3.x+ requires **Quarkus 3.40 or later**. For **Quarkus 3.33 LTS**, use version **1.2.x**
+instead — it does not have keep-alive/read-timeout support, since Quarkus added the APIs this
+extension needs for that after 3.33.
+
 ## Installation
 
 ```xml
@@ -27,7 +33,8 @@ quarkus.datasource.jdbc.url=jdbc:edb://localhost:5444/edb
 
 ## What's supported
 
-- **Datasources** via Agroal, including XA (`quarkus.datasource.jdbc.transactions=xa`).
+- **Datasources** via Agroal, including XA (`quarkus.datasource.jdbc.transactions=xa`) and connection
+  keep-alive/read-timeout (`quarkus.datasource.jdbc.enable-keep-alive`, `.read-timeout`).
 - **Hibernate ORM**, mapped to `org.hibernate.dialect.PostgresPlusDialect`. No need to set
   `quarkus.hibernate-orm.dialect` manually.
 - **GraalVM native image**, with no additional configuration.
