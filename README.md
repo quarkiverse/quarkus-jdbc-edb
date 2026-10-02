@@ -8,9 +8,13 @@ A Quarkus extension providing JDBC connectivity to
 
 ## Supported versions
 
-Version 1.3.x+ requires **Quarkus 3.40 or later**. For **Quarkus 3.33 LTS**, use version **1.2.x**
-instead — it does not have keep-alive/read-timeout support, since Quarkus added the APIs this
-extension needs for that after 3.33.
+| Extension version | Quarkus version      |
+|--------------------|-----------------------|
+| `1.3.x`            | 3.40 LTS or later     |
+| `1.2.x`            | 3.33 LTS              |
+
+Version `1.2.x` does not have keep-alive/read-timeout support, because Quarkus only added the APIs
+this extension needs for it after version 3.33.
 
 ## Installation
 
