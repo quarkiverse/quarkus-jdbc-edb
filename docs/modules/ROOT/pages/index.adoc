@@ -21,10 +21,16 @@ Add the extension to your build file. With Maven, add the following dependency t
 
 == Supported versions
 
-This extension requires *Java 17 or later* and *Quarkus 3.33 or later*.
+This extension requires *Java 17 or later* and *Quarkus 3.40 or later*.
 
-Every commit is built and tested on JDK 17, 21 and 25, and an application is built against the oldest
-supported Quarkus version to verify it stays usable there.
+For Quarkus 3.33 LTS, use version `1.2.x` of this extension instead. The two are maintained as separate
+release lines because a single build can only target one Quarkus core: the Quarkus extension registry
+selects which release to offer a given Quarkus version by the core it was built against. Version `1.2.x`
+does not have <<keep-alive-and-read-timeout,keep-alive and read-timeout support>>, since Quarkus added
+the APIs this extension needs for that after 3.33.
+
+Every commit is built and tested on JDK 17, 21 and 25, and an application is built against the newest
+Quarkus release to verify it stays usable there.
 
 Native image builds are verified on JDK 17 only. That is not a limitation of native image support: the
 native build uses a Mandrel builder image with its own bundled JDK, so it is insensitive to the JDK
@@ -51,6 +57,21 @@ Because this extension is usually the only JDBC driver on the classpath,
 
 This extension contributes no configuration properties of its own; it is configured entirely through
 the standard https://quarkus.io/guides/datasource[Quarkus datasource configuration].
+
+[#keep-alive-and-read-timeout]
+== Connection keep-alive and read timeout
+
+[source,properties]
+----
+quarkus.datasource.jdbc.enable-keep-alive=true
+quarkus.datasource.jdbc.read-timeout=30s
+----
+
+Both properties map onto the driver's own `tcpKeepAlive` and `socketTimeout` connection properties.
+
+These require Quarkus 3.40 or later -- see <<Supported versions>>. On version `1.2.x` (Quarkus 3.33 LTS)
+they have no effect: Quarkus logs `Agroal does not support KeepAlive for database kind: edb` and
+silently does not apply either property, rather than failing the build or the deployment.
 
 == XA transactions
 
